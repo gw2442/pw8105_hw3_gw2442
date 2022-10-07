@@ -1,0 +1,39 @@
+---
+title: "p8105_hw3_gw2442"
+output: github_document
+date: "2022-10-07"
+---
+```{r}
+library(tidyverse)
+```
+
+## Problem 1 
+
+```{r}
+library(p8105.datasets)
+data("instacart")
+
+instacart %>%
+  group_by(aisle_id) %>%
+  summarise(n_obs = n()) %>%
+  arrange(desc(n_obs))
+```
+There are 134 aisle. The aisle with the most items ordered from were:
+
+ * Aisle 83 with 150,609 items
+ 
+ * Aisle 24 with 150,473 items
+ 
+ * Aisle 123 with 78,493 items
+
+```{r}
+instacart %>%
+  group_by(aisle_id) %>%
+  mutate(
+    n_obs = n()
+  ) %>%
+  filter(n_obs > 10000) %>%
+ggplot(aes(x = aisle_id, y = n_obs)) +
+  geom_point()
+```
+
