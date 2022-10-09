@@ -21,9 +21,7 @@ instacart %>%
 There are 134 aisle. The aisle with the most items ordered from were:
 
  * Aisle 83 with 150,609 items
- 
  * Aisle 24 with 150,473 items
- 
  * Aisle 123 with 78,493 items
 
 ```{r}
@@ -36,4 +34,85 @@ instacart %>%
 ggplot(aes(x = aisle_id, y = n_obs)) +
   geom_point()
 ```
+
+```{r}
+instacart %>%
+  filter(aisle == c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>%
+  group_by(aisle, product_name) %>%
+  summarise(n_obs = n()) 
+
+```
+
+## Problem 2
+
+Loading, tidying, and wrangling the dataset:
+```{r}
+accel_data = read_csv("data/accel_data.csv") %>%
+  janitor::clean_names() %>%
+  mutate(
+    day_type = ifelse(day %in% c("Saturday", "Sunday"), "weekend", "weekday")) %>%
+  select(week, day_id, day, day_type, everything()) %>%
+  pivot_longer(
+    activity_1:activity_1440,
+    names_to = "activity_number",
+    names_prefix = "activity_",
+    names_transform = list(activity_number = as.numeric),
+    values_to = "activity_count_min"
+  ) 
+
+skimr::skim(accel_data)
+```
+The dataset consists of the following variables: week, day_id, day, day_type, activity_number, and activity_count_min. All variables are numeric variables except for day and day_type. The dataset is made up of 50400 rows and 6 columns. 
+
+```{r}
+accel_data %>%
+  group_by(day_id) %>%
+  mutate(
+    activity_total = sum(activity_count_min)
+  ) %>%
+  summarise(day, activity_total) %>%
+  distinct %>%
+  print(n = 35)
+```
+From this table, there are no obvious trends apparent. However, two of the Saturdays (day_id = 24, 31) both have a total activity of 1440 minutes. 
+
+```{r}
+accel_data %>%
+  mutate(
+    week = as.character(week)
+  ) %>%
+  ggplot(aes(x = activity_number, y = activity_count_min, color = week)) + 
+  geom_point(alpha = 0.5) +
+  labs(
+    title = "24 Hour Activity Time Plot",
+    x = "Minutes",
+    y = "Activity Count"
+  )
+```
+Activity seems to spike around minute 650 and 1250 for weeks 1, 2, 3, and 4. Weeks 1 and 2 also demonstrate a spike in activity during minute 1000. For week 5, activity seems to spike around minute 400 and 1250. Based on this graph, the 63-year old male with BMI 25 demonstrates a rather consistent daily routine for the 5 recorded weeks. 
+
+
+## Problem 3 
+
+```{r}
+library(p8105.datasets)
+data("ny_noaa")
+
+problem_3 = ny_noaa %>%
+  janitor::clean_names() %>%
+  separate(date, c("year", "month", "day"), sep = "-") %>%
+  mutate(
+    prcp = prcp*10
+  )
+
+
+```
+
+
+
+
+
+
+
+
 
