@@ -5,6 +5,7 @@ date: "2022-10-07"
 ---
 ```{r}
 library(tidyverse)
+library(patchwork)
 ```
 
 ## Problem 1 
@@ -94,25 +95,86 @@ Activity seems to spike around minute 650 and 1250 for weeks 1, 2, 3, and 4. Wee
 
 ## Problem 3 
 
+Description of the dataset
 ```{r}
 library(p8105.datasets)
 data("ny_noaa")
+skimr::skim(ny_noaa)
+```
+There are 2595176 rows and 7 columns in this dataset. The variables within the dataset are: id, date, prcp, snow, snwd, tmax, and tmin. There are 1134358 missing data points for tmax, 1134420 missing data points for tmin, 145838 missing data poitns for prcp, 381221 missing data points for snow, and 591786 missing data points for snwd. 
 
-problem_3 = ny_noaa %>%
+```{r}
+problem_3 = 
+ny_noaa %>%
   janitor::clean_names() %>%
   separate(date, c("year", "month", "day"), sep = "-") %>%
   mutate(
-    prcp = prcp*10
+    year = as.numeric(year),
+    month = as.numeric(month),
+    day = as.numeric(day),
+    prcp = prcp/10,
+    tmax = as.numeric(tmax),
+    tmin = as.numeric(tmin),
+    tmax = tmax/10,
+    tmin = tmin/10
   )
 
+problem_3 %>%
+  count(snow, name = "n_obs_snow")
+```
+The most commonly observed value is 0mm of snowfall. This is observed 2008508 times in the dataset. This makes sense, as snow is not an often weather occurrence, and most days there is no snowfall in New York. 
 
+```{r}
+max_temp_jan = 
+  problem_3 %>%
+  filter(month == 01) %>%
+  drop_na(tmax) %>%
+  group_by(id) %>%
+  summarise(
+    mean_tmax = mean(tmax)) 
+
+max_temp_july = 
+  problem_3 %>%
+  filter(month == 07) %>%
+  drop_na(tmax) %>%
+  group_by(id) %>%
+  summarise(
+    mean_tmax = mean(tmax)) 
+
+  ggplot(data = max_temp_jan, aes(x = id, y = mean_tmax)) +
+  geom_point() +
+  scale_y_continuous(
+    limits = c(-20, 40)) +
+  labs(
+    title = "Average max temp (C) in January",
+    x = "Station ID",
+    y = "Average max temp (C)") +
+    
+  ggplot(data = max_temp_july, aes(x = id, y = mean_tmax)) + 
+  geom_point() +
+  scale_y_continuous(
+    limits = c(-20, 40)) +
+  labs(
+    title = "Average max temp (C) in July",
+    x = "Station ID",
+    y = "Average max temp (C)") 
+```
+The two-panel plot demonstrates that the average max temperature in January has remained around 0C across the years, with a couple outliers around -15C. The plot also demonstrates that the average max temperature in July has remained around 25C across the years. 
+
+
+```{r}
+problem_3 %>%
+  select(id, tmax, tmin) %>%
+  pivot_longer(
+    tmax:tmin,
+    names_to = "observation",
+    values_to = "temp") %>%
+  ggplot(aes(x = temp, fill = observation)) +
+  geom_density(alpha = 0.5) +
+  facet_grid(~id) +
+  viridis::scale_fill_viridis(discrete = TRUE)
 ```
 
-
-
-
-
-
-
+make a two-panel plot showing (i) tmax vs tmin for the full dataset (not that  scatterplot may not be the best option); and (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year 
 
 
