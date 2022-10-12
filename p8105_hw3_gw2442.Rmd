@@ -117,7 +117,7 @@ ny_noaa %>%
     tmin = as.numeric(tmin),
     tmax = tmax/10,
     tmin = tmin/10
-  )
+  ) 
 
 problem_3 %>%
   count(snow, name = "n_obs_snow")
@@ -163,18 +163,36 @@ The two-panel plot demonstrates that the average max temperature in January has 
 
 
 ```{r}
-problem_3 %>%
-  select(id, tmax, tmin) %>%
+tmax_vs_tmin =
+  problem_3 %>%
+  select(tmax, tmin) %>%
+  drop_na(tmax, tmin) %>%
   pivot_longer(
     tmax:tmin,
     names_to = "observation",
-    values_to = "temp") %>%
-  ggplot(aes(x = temp, fill = observation)) +
+    values_to = "temp")
+
+snow_fall =
+  problem_3 %>%
+  filter(0 < snow ,
+         snow < 100) %>%
+  group_by(year) 
+
+
+ggplot(data = tmax_vs_tmin, aes(x = temp, fill = observation)) +
   geom_density(alpha = 0.5) +
-  facet_grid(~id) +
-  viridis::scale_fill_viridis(discrete = TRUE)
+  viridis::scale_fill_viridis(discrete = TRUE) +
+  labs(
+    title = "Tmax vs Tmin",
+    x = "Temp (C)") +
+
+ ggplot(data = snow_fall, aes(group = year, x = year, y = snow)) + 
+   geom_boxplot() +
+   labs(
+    title = "Distribution of snowfall values greater than 0 and less than 100 by year",
+    x = "Year",
+    y = "Snow Fall (mm)") 
 ```
 
-make a two-panel plot showing (i) tmax vs tmin for the full dataset (not that  scatterplot may not be the best option); and (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year 
 
 
