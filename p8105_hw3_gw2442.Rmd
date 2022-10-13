@@ -6,44 +6,88 @@ date: "2022-10-07"
 ```{r}
 library(tidyverse)
 library(patchwork)
+library(ggridges)
+library(p8105.datasets)
+
+knitr::opts_chunk$set(
+	echo = TRUE,
+	warning = FALSE,
+	fig.width = 8, 
+  fig.height = 6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
 ```
 
 ## Problem 1 
 
 ```{r}
-library(p8105.datasets)
 data("instacart")
 
+instacart = 
+  instacart %>% 
+  as_tibble(instacart)
+```
+
+This dataset contains 11384617 rows and 15 columns. Each row represents a single item from an instacart order. The variables in the dataset pertain to information such as identifiers for user, the order in which each product was added to the cart, number of days since prior order, product name, aisle the product belongs in, and so on. The variables within this dataset are specifically as follows: `order_id`, `product_id`, `add_to_cart_order`, `reordered`, `user_id`, `eval_set`, `order_number`, `order_dow`, `order_hour_of_day`, `days_since_prior_order`, `product_name`, `aisle_id`, `department_id`, `aisle`, and `department`. In total, there are `r instacart %>% select(product_id) %>% distinct %>% count` products found in `r instacart %>% select(user_id, order_id) %>% distinct %>% count` orders from `r instacart %>% select(user_id) %>% distinct %>% count` distinct users.
+
+```{r}
 instacart %>%
   group_by(aisle_id) %>%
   summarise(n_obs = n()) %>%
   arrange(desc(n_obs))
 ```
 
-There are 134 aisle. The aisle with the most items ordered from were:
+There are 134 aisles. The aisle with the most items ordered from were:
 
  * Aisle 83 with 150,609 items
  * Aisle 24 with 150,473 items
  * Aisle 123 with 78,493 items
 
+
+This is a plot showing the number of items ordered in each aisle, limited to aisle with more than 1000 items ordered:
 ```{r}
-instacart %>%
-  group_by(aisle_id) %>%
-  mutate(
-    n_obs = n()
-  ) %>%
-  filter(n_obs > 10000) %>%
-ggplot(aes(x = aisle_id, y = n_obs)) +
-  geom_point()
+instacart %>% 
+  count(aisle) %>% 
+  filter(n > 10000) %>% 
+  mutate(aisle = fct_reorder(aisle, n)) %>% 
+  ggplot(aes(x = aisle, y = n)) + 
+  geom_point() + 
+  labs(title = "Number of items ordered in each aisle") +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
 ```
 
+This is a table showing the three most popular items in each of the aisles "baking ingredients", "dog food care", and "packaged vegetables fruits":
+```{r}
+instacart %>% 
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>%
+  group_by(aisle) %>% 
+  count(product_name) %>% 
+  mutate(rank = min_rank(desc(n))) %>% 
+  filter(rank < 4) %>% 
+  arrange(desc(n)) %>%
+  knitr::kable()
+```
+
+This is a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered ine ach day of the week: 
 ```{r}
 instacart %>%
-  filter(aisle == c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>%
-  group_by(aisle, product_name) %>%
-  summarise(n_obs = n()) 
-
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>%
+  group_by(product_name, order_dow) %>%
+  summarize(mean_hour = mean(order_hour_of_day)) %>%
+  spread(key = order_dow, value = mean_hour) %>%
+  knitr::kable(digits = 2)
 ```
+
 
 ## Problem 2
 
@@ -67,6 +111,8 @@ skimr::skim(accel_data)
 
 The dataset consists of the following variables: week, day_id, day, day_type, activity_number, and activity_count_min. All variables are numeric variables except for day and day_type. The dataset is made up of 50400 rows and 6 columns. 
 
+
+This is a table showing the total minutes of activity for each day: 
 ```{r}
 accel_data %>%
   group_by(day_id) %>%
@@ -75,18 +121,18 @@ accel_data %>%
   ) %>%
   summarise(day, activity_total) %>%
   distinct %>%
-  print(n = 35)
+  print(n = 35) %>%
+  knitr::kable()
 ```
 
 From this table, there are no obvious trends apparent. However, two of the Saturdays (day_id = 24, 31) both have a total activity of 1440 minutes. 
 
+
+This is a single-panel plot showing the 24-hour activity time courses for each day, differentiated by the day of the week:
 ```{r}
-accel_data %>%
-  mutate(
-    week = as.character(week)
-  ) %>%
+  accel_data %>%
   ggplot(aes(x = activity_number, y = activity_count_min, color = day)) + 
-  geom_point() +
+  geom_line(aes(group = day_id)) +
   labs(
     title = "24 Hour Activity Time Plot",
     x = "Minutes",
@@ -94,20 +140,20 @@ accel_data %>%
   )
 ```
 
-From this scatterplot, Thursdays seem to exhibit a spike in activity around minute 400 of the day. Saturday's and Sunday's exhibit a spike in activity around minute 700 and minute 1000. There seems to be a spike in activity across all days of the week around minute 1250. 
+From this plot, Sundays seem to exhibit a spike in activity around minute 400 of the day. Saturday's and Sunday's exhibit a spike in activity around minute 700 and minute 1000. There seems to be a spike in activity across all days of the week around minute 1250. 
 
 
 ## Problem 3 
 
 Description of the dataset
 ```{r}
-library(p8105.datasets)
 data("ny_noaa")
 skimr::skim(ny_noaa)
 ```
 
 There are 2595176 rows and 7 columns in this dataset. The variables within the dataset are: id, date, prcp, snow, snwd, tmax, and tmin. There are 1134358 missing data points for tmax, 1134420 missing data points for tmin, 145838 missing data poitns for prcp, 381221 missing data points for snow, and 591786 missing data points for snwd. 
 
+Data cleaning: 
 ```{r}
 problem_3 = 
 ny_noaa %>%
@@ -125,17 +171,20 @@ ny_noaa %>%
   ) 
 
 problem_3 %>%
-  count(snow, name = "n_obs_snow")
+  count(snow, name = "n_obs_snow") %>%
+  knitr::kable()
 ```
 
 The most commonly observed value is 0mm of snowfall. This is observed 2008508 times in the dataset. This makes sense, as snow is not an often weather occurrence, and most days there is no snowfall in New York. 
 
+
+This is a two-panel plot showing the average max temperatur ein January and July in each station across years: 
 ```{r}
 max_temp_jan = 
   problem_3 %>%
   filter(month == 01) %>%
   drop_na(tmax) %>%
-  group_by(id) %>%
+  group_by(year, id) %>%
   summarise(
     mean_tmax = mean(tmax)) 
 
@@ -143,32 +192,35 @@ max_temp_july =
   problem_3 %>%
   filter(month == 07) %>%
   drop_na(tmax) %>%
-  group_by(id) %>%
+  group_by(year, id) %>%
   summarise(
     mean_tmax = mean(tmax)) 
 
-  ggplot(data = max_temp_jan, aes(x = id, y = mean_tmax)) +
-  geom_point() +
+  ggplot(data = max_temp_jan, aes(x = year, y = mean_tmax, color)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(se = FALSE) +
   scale_y_continuous(
     limits = c(-20, 40)) +
   labs(
     title = "Average max temp (C) in January",
-    x = "Station ID",
+    x = "Year",
     y = "Average max temp (C)") +
     
-  ggplot(data = max_temp_july, aes(x = id, y = mean_tmax)) + 
-  geom_point() +
+  ggplot(data = max_temp_july, aes(x = year, y = mean_tmax)) + 
+  geom_point(alpha = 0.5) +
+  geom_smooth(se = FALSE) +
   scale_y_continuous(
     limits = c(-20, 40)) +
   labs(
     title = "Average max temp (C) in July",
-    x = "Station ID",
+    x = "Year",
     y = "Average max temp (C)") 
 ```
 
 The two-panel plot demonstrates that the average max temperature in January has remained around 0C across the years, with a couple outliers around -15C. The plot also demonstrates that the average max temperature in July has remained around 25C across the years. 
 
 
+This is a two-panel plot showing (i) `tmax` vs `tmin` for the full data set and (ii) a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year:
 ```{r}
 tmax_vs_tmin =
   problem_3 %>%
@@ -178,13 +230,12 @@ tmax_vs_tmin =
     tmax:tmin,
     names_to = "observation",
     values_to = "temp")
-
+  
 snow_fall =
   problem_3 %>%
   filter(0 < snow ,
          snow < 100) %>%
   group_by(year) 
-
 
 ggplot(data = tmax_vs_tmin, aes(x = temp, fill = observation)) +
   geom_density(alpha = 0.5) +
@@ -193,13 +244,13 @@ ggplot(data = tmax_vs_tmin, aes(x = temp, fill = observation)) +
     title = "Tmax vs Tmin",
     x = "Temp (C)") +
 
- ggplot(data = snow_fall, aes(group = year, x = year, y = snow)) + 
-   geom_boxplot() +
-   labs(
+ggplot(data = snow_fall, aes(x = snow, y = year, group = year, fill = year)) +
+  geom_density_ridges() +
+  theme(legend.position = "none") +
+  viridis::scale_fill_viridis(discrete = FALSE) +
+  labs(
     title = "Distribution of snowfall values greater than 0 and less than 100 by year",
-    x = "Year",
-    y = "Snow Fall (mm)") 
+    x = "Snow Fall (mm)",
+    y = "Year") 
 ```
-
-
 
