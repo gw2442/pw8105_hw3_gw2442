@@ -19,6 +19,7 @@ instacart %>%
   summarise(n_obs = n()) %>%
   arrange(desc(n_obs))
 ```
+
 There are 134 aisle. The aisle with the most items ordered from were:
 
  * Aisle 83 with 150,609 items
@@ -63,6 +64,7 @@ accel_data = read_csv("data/accel_data.csv") %>%
 
 skimr::skim(accel_data)
 ```
+
 The dataset consists of the following variables: week, day_id, day, day_type, activity_number, and activity_count_min. All variables are numeric variables except for day and day_type. The dataset is made up of 50400 rows and 6 columns. 
 
 ```{r}
@@ -75,6 +77,7 @@ accel_data %>%
   distinct %>%
   print(n = 35)
 ```
+
 From this table, there are no obvious trends apparent. However, two of the Saturdays (day_id = 24, 31) both have a total activity of 1440 minutes. 
 
 ```{r}
@@ -82,15 +85,16 @@ accel_data %>%
   mutate(
     week = as.character(week)
   ) %>%
-  ggplot(aes(x = activity_number, y = activity_count_min, color = week)) + 
-  geom_point(alpha = 0.5) +
+  ggplot(aes(x = activity_number, y = activity_count_min, color = day)) + 
+  geom_point() +
   labs(
     title = "24 Hour Activity Time Plot",
     x = "Minutes",
     y = "Activity Count"
   )
 ```
-Activity seems to spike around minute 650 and 1250 for weeks 1, 2, 3, and 4. Weeks 1 and 2 also demonstrate a spike in activity during minute 1000. For week 5, activity seems to spike around minute 400 and 1250. Based on this graph, the 63-year old male with BMI 25 demonstrates a rather consistent daily routine for the 5 recorded weeks. 
+
+From this scatterplot, Thursdays seem to exhibit a spike in activity around minute 400 of the day. Saturday's and Sunday's exhibit a spike in activity around minute 700 and minute 1000. There seems to be a spike in activity across all days of the week around minute 1250. 
 
 
 ## Problem 3 
@@ -101,6 +105,7 @@ library(p8105.datasets)
 data("ny_noaa")
 skimr::skim(ny_noaa)
 ```
+
 There are 2595176 rows and 7 columns in this dataset. The variables within the dataset are: id, date, prcp, snow, snwd, tmax, and tmin. There are 1134358 missing data points for tmax, 1134420 missing data points for tmin, 145838 missing data poitns for prcp, 381221 missing data points for snow, and 591786 missing data points for snwd. 
 
 ```{r}
@@ -122,6 +127,7 @@ ny_noaa %>%
 problem_3 %>%
   count(snow, name = "n_obs_snow")
 ```
+
 The most commonly observed value is 0mm of snowfall. This is observed 2008508 times in the dataset. This makes sense, as snow is not an often weather occurrence, and most days there is no snowfall in New York. 
 
 ```{r}
@@ -159,6 +165,7 @@ max_temp_july =
     x = "Station ID",
     y = "Average max temp (C)") 
 ```
+
 The two-panel plot demonstrates that the average max temperature in January has remained around 0C across the years, with a couple outliers around -15C. The plot also demonstrates that the average max temperature in July has remained around 25C across the years. 
 
 
