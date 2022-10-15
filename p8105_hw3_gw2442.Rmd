@@ -5,6 +5,7 @@ date: "2022-10-07"
 ---
 ```{r}
 library(tidyverse)
+library(dplyr)
 library(patchwork)
 library(ggridges)
 library(p8105.datasets)
@@ -172,47 +173,32 @@ ny_noaa %>%
 
 problem_3 %>%
   count(snow, name = "n_obs_snow") %>%
+  arrange(desc(n_obs_snow)) %>%
   knitr::kable()
 ```
+After tidying the `ny_noaa` dataset, the dataset (renamed `problem_3`) has 2595176 rows and 9 variables (`id`, `year`, `month`, `day`, `prcp`, `snow`, `snwd`, `tmax`, and `tmin`)
 
-The most commonly observed value is 0mm of snowfall. This is observed 2008508 times in the dataset. This makes sense, as snow is not an often weather occurrence, and most days there is no snowfall in New York. 
+The most commonly observed value is 0mm of snowfall. This is observed 2008508 times in the dataset. This makes sense, as snow is not an often weather occurrence, and most days there is no snowfall in New York. it should be noted that the second most commonly observed value for snowfall is NA. This is observed 381221 times in the dataset.
 
 
-This is a two-panel plot showing the average max temperatur ein January and July in each station across years: 
+This is a two-panel plot showing the average max temperature in January and July in each station across years: 
 ```{r}
-max_temp_jan = 
+max_temp_jan_july = 
   problem_3 %>%
-  filter(month == 01) %>%
+  filter(month == 01 | month == 07) %>%
+  mutate(month = recode (month,
+                         "01" = "January",
+                         "07" = "July")) %>%
   drop_na(tmax) %>%
-  group_by(year, id) %>%
-  summarise(
-    mean_tmax = mean(tmax)) 
+  group_by(year, month, id) %>%
+  mutate(mean_tmax = mean(tmax))
 
-max_temp_july = 
-  problem_3 %>%
-  filter(month == 07) %>%
-  drop_na(tmax) %>%
-  group_by(year, id) %>%
-  summarise(
-    mean_tmax = mean(tmax)) 
-
-  ggplot(data = max_temp_jan, aes(x = year, y = mean_tmax, color)) +
-  geom_point(alpha = 0.5) +
-  geom_smooth(se = FALSE) +
-  scale_y_continuous(
-    limits = c(-20, 40)) +
+  ggplot(data = max_temp_jan_july, aes(x = year, y = mean_tmax)) +
+  geom_point(aes(color = tmax), alpha = 0.05) +
+  geom_smooth(se = FALSE, color = "blue") +
+  facet_grid(~ month) +
   labs(
-    title = "Average max temp (C) in January",
-    x = "Year",
-    y = "Average max temp (C)") +
-    
-  ggplot(data = max_temp_july, aes(x = year, y = mean_tmax)) + 
-  geom_point(alpha = 0.5) +
-  geom_smooth(se = FALSE) +
-  scale_y_continuous(
-    limits = c(-20, 40)) +
-  labs(
-    title = "Average max temp (C) in July",
+    title = "Average max temp (C) in January Vs July (1981-2010)",
     x = "Year",
     y = "Average max temp (C)") 
 ```
